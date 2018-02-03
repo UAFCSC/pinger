@@ -17,7 +17,7 @@ import sys
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-ip_net = None
+ip_net = ipaddress.ip_network('10.250.104.0/24')
 detected_ips = []
 ip_names = {
     "0.0.0.0" : "Thats not a real ip"
@@ -92,6 +92,13 @@ def interrupt():
     global ping_thread
     ping_thread.cancel()
 
+@app.before_first_request
+def setup_threads():
+    ping_thread = Timer(PING_TIME, ping_subnet)
+    ping_thread.start()
+
+    atexit.register(interrupt)
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -108,10 +115,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         PING_TIME = int(sys.argv[2])
 
-    ping_thread = Timer(PING_TIME, ping_subnet)
-    ping_thread.start()
-
-    atexit.register(interrupt)
 
     # Debug causes extra threads to run
     # app.debug = True
