@@ -20,7 +20,7 @@
 
       <div id="ip_list">
         {% for ip in ips %}
-        <div class="card card-body m-1">
+        <div class="card card-body m-1 p-2">
           {{ip}}
           {% if ip in names %}
           ({{names[ip]}})
@@ -49,7 +49,7 @@
 
       function create_node(ip, nickname) {
         var li = document.createElement('div');
-        li.className="card card-body m-1"
+        li.className="card card-body m-1 p-2"
         li.appendChild(document.createTextNode(ip))
         if (nickname !== null) {
           li.appendChild(document.createTextNode(' (' + nickname + ')'))

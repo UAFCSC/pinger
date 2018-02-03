@@ -5,15 +5,19 @@
 # Flask server for displaying the hosts that are up on the given subnet
 
 import atexit
+import ipaddress
 from flask import Flask
 from flask import render_template, request
 from flask_socketio import SocketIO
 from threading import Timer, Thread, Lock
 from time import time
+import subprocess
+import sys
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+ip_net = None
 detected_ips = []
 ip_names = {
     "0.0.0.0" : "Thats not a real ip"
@@ -54,10 +58,21 @@ def ping_subnet():
     global ip_names
     global lock
     global socketio
+    global ip_net
 
+    ips = []
+    for host in ip_net.hosts():
+        output = subprocess.Popen(
+            ['fping', '-c1', '-t50', str(host)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        output.communicate()[0]
+        if output.returncode == 0:
+            ips.append(str(host))
     with lock:
-        ip = '0.0.0.0'
-        detected_ips.append(ip)
+        detected_ips = ips
+        print(detected_ips)
         socketio.emit('new_ips', [(ip, ip_names.get(ip)) for ip in detected_ips])
 
     ping_thread = Timer(PING_TIME, ping_subnet)
@@ -70,6 +85,17 @@ def interrupt():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Must supply a subnet to monitor.")
+        print("app.py 10.250.100.1.0/24")
+        sys.exit()
+
+    try:
+        ip_net = ipaddress.ip_network(sys.argv[1])
+    except ValueError as e:
+        print(e)
+        sys.exit()
+
     ping_thread = Timer(PING_TIME, ping_subnet)
     ping_thread.start()
 
