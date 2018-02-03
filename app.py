@@ -51,6 +51,15 @@ def set_nickname():
 
     return render_template('set_nickname.html')
 
+def ping_host(host, l):
+    output = subprocess.Popen(
+        ['fping', '-c1', '-t100', str(host)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    output.communicate()[0]
+    if output.returncode == 0:
+        l.append(str(host))
 
 def ping_subnet():
     global ping_thread
@@ -61,15 +70,15 @@ def ping_subnet():
     global ip_net
 
     ips = []
+    workers = []
     for host in ip_net.hosts():
-        output = subprocess.Popen(
-            ['fping', '-c1', '-t50', str(host)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        output.communicate()[0]
-        if output.returncode == 0:
-            ips.append(str(host))
+        t = Thread(target=ping_host, args=(host, ips))
+        workers.append(t)
+        t.start()
+
+    for thread in workers:
+        thread.join()
+
     with lock:
         detected_ips = ips
         print(detected_ips)
