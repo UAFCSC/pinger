@@ -96,7 +96,7 @@ def interrupt():
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Must supply a subnet to monitor.")
-        print("app.py 10.250.100.1.0/24")
+        print("app.py 10.250.100.1.0/24 [TIMOUT]")
         sys.exit()
 
     try:
@@ -104,6 +104,9 @@ if __name__ == '__main__':
     except ValueError as e:
         print(e)
         sys.exit()
+
+    if len(sys.argv) > 2:
+        PING_TIME = int(sys.argv[2])
 
     ping_thread = Timer(PING_TIME, ping_subnet)
     ping_thread.start()
